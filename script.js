@@ -1,6 +1,7 @@
 const monthSelect = document.getElementById('month-select');
 const viewSelect = document.getElementById('view-select');
 const toggleViewBtn = document.getElementById('toggle-view-btn');
+const clearDataBtn = document.getElementById('clear-data-btn');
 const calendarGrid = document.getElementById('calendar-grid');
 const calculateBtn = document.getElementById('calculate-btn');
 const resultDiv = document.getElementById('result');
@@ -29,6 +30,7 @@ const holidays1404 = [
 
 // Array to store shift inputs temporarily
 let savedShifts = [];
+let currentViewMode = 'calendar'; // Variable to track the current view state
 
 // Function to check for holidays
 function isHoliday(month, day) {
@@ -128,17 +130,19 @@ function createCalendar(monthIndex, viewMode) {
 function calculateHours() {
     let totalWorkHours = 0;
     let totalLeaveHours = 0;
-    let leaveCount = 0; // متغیر جدید برای شمارش مرخصی‌ها
+    let leaveCount = 0;
     const shiftInputs = document.querySelectorAll('.shift-input');
     const shifts = Array.from(shiftInputs).map(input => input.value.trim().toUpperCase());
 
     for (let i = 0; i < shifts.length; i++) {
         const currentShift = shifts[i];
+        const nextShift = (i + 1 < shifts.length) ? shifts[i + 1] : '';
+        
         switch(currentShift) {
             case 'D': totalWorkHours += 7.5; break;
             case 'E': totalWorkHours += 6.5; break;
             case 'N':
-                if (i + 1 < shifts.length && (shifts[i + 1] === 'D' || shifts[i + 1] === 'DN')) {
+                if (nextShift === 'D' || nextShift === 'DN') {
                     totalWorkHours += 11.0;
                 } else {
                     totalWorkHours += 11.5;
@@ -147,7 +151,7 @@ function calculateHours() {
             case 'DE': totalWorkHours += 13.5; break;
             case 'EN': totalWorkHours += 17.5; break;
             case 'DN':
-                if (i + 1 < shifts.length && shifts[i + 1] === 'D') {
+                if (nextShift === 'DN' || nextShift === 'D') {
                     totalWorkHours += 18.5;
                 } else {
                     totalWorkHours += 19;
@@ -155,26 +159,25 @@ function calculateHours() {
                 break;
             case 'M': 
                 totalLeaveHours += 7.33; 
-                leaveCount++; // شمارش مرخصی
+                leaveCount++;
                 break;
         }
     }
-    
+
     const totalOverallHours = totalWorkHours + totalLeaveHours;
     const ATTENDANCE_OBLIGATION = 192;
     let attendanceDeficit = ATTENDANCE_OBLIGATION - totalOverallHours;
     
-    // Determine color and sign based on deficit/surplus
     let deficitColorClass = '';
-    let deficitSign = '';
+    let deficitText = '';
 
     if (attendanceDeficit > 0) {
-        deficitColorClass = 'red-text'; // Less than 192 -> Deficit -> Red
-        deficitSign = '+';
+        deficitColorClass = 'red-text';
+        deficitText = '(کسری)';
     } else {
-        deficitColorClass = 'green-text'; // More than 192 -> Surplus -> Green
-        deficitSign = '-';
-        attendanceDeficit = Math.abs(attendanceDeficit); // Display as a positive number with a minus sign
+        deficitColorClass = 'green-text';
+        deficitText = '(مازاد)';
+        attendanceDeficit = Math.abs(attendanceDeficit);
     }
 
     resultDiv.innerHTML = `
@@ -189,10 +192,10 @@ function calculateHours() {
             </thead>
             <tbody>
                 <tr>
-                    <td>${totalWorkHours.toFixed(2)}</td>
-                    <td>${totalLeaveHours.toFixed(2)} (${leaveCount} مرخصی)</td>
-                    <td>${totalOverallHours.toFixed(2)}</td>
-                    <td><span class="${deficitColorClass}">${deficitSign}${attendanceDeficit.toFixed(2)}</span></td>
+                    <td>${totalWorkHours.toFixed(1)}</td>
+                    <td>${totalLeaveHours.toFixed(1)} (${leaveCount} مرخصی)</td>
+                    <td>${totalOverallHours.toFixed(1)}</td>
+                    <td><span class="${deficitColorClass}">${attendanceDeficit.toFixed(1)} ${deficitText}</span></td>
                 </tr>
             </tbody>
         </table>
@@ -203,7 +206,6 @@ function calculateHours() {
 function exportAsPDF() {
     const { jsPDF } = window.jspdf;
     
-    // Check if the current view is linear
     if (viewSelect.value === 'linear') {
         const userConfirmation = confirm("خروجی فقط روی حالت تقویمی ذخیره می‌شود. آیا مایل به تغییر حالت نمایش هستید؟");
         if (userConfirmation) {
@@ -212,7 +214,6 @@ function exportAsPDF() {
             saveShifts();
             createCalendar(selectedMonthIndex, 'calendar');
 
-            // Wait a moment for the new grid to render, then export
             setTimeout(() => {
                 html2canvas(captureArea, { scale: 2 }).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
@@ -222,9 +223,9 @@ function exportAsPDF() {
                     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
                     pdf.save('گزارش-شیفت.pdf');
                 });
-            }, 100); // 100ms delay to ensure proper rendering
+            }, 100);
         }
-    } else { // Current view is already calendar
+    } else {
         html2canvas(captureArea, { scale: 2 }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const imgWidth = canvas.width;
@@ -245,6 +246,17 @@ function toggleViewWithData() {
     createCalendar(selectedMonthIndex, newViewMode);
 }
 
+// Function to clear all data
+function clearAllData() {
+    const userConfirmation = confirm("آیا از پاک نمودن اطلاعات اطمینان دارید؟");
+    if (userConfirmation) {
+        savedShifts = [];
+        monthSelect.value = '0';
+        resultDiv.innerHTML = '';
+        createCalendar(0, viewSelect.value);
+    }
+}
+
 // Populate month select
 persianMonths.forEach((month, index) => {
     const option = document.createElement('option');
@@ -254,21 +266,33 @@ persianMonths.forEach((month, index) => {
 });
 
 // Event listeners
+viewSelect.addEventListener('change', () => {
+    saveShifts();
+    
+    if (savedShifts.some(shift => shift !== '')) {
+        const userConfirmation = confirm("با تغییر حالت نمایش، اطلاعات وارد شده حذف میشود");
+        if (!userConfirmation) {
+            viewSelect.value = currentViewMode;
+            return;
+        }
+    }
+    
+    currentViewMode = viewSelect.value;
+    const selectedMonthIndex = parseInt(monthSelect.value);
+    savedShifts = [];
+    createCalendar(selectedMonthIndex, currentViewMode);
+});
+
 monthSelect.addEventListener('change', () => {
     const selectedMonthIndex = parseInt(monthSelect.value);
     const selectedViewMode = viewSelect.value;
-    saveShifts(); // Save shifts before changing view
+    saveShifts();
     createCalendar(selectedMonthIndex, selectedViewMode);
 });
 
-viewSelect.addEventListener('change', () => {
-    const selectedMonthIndex = parseInt(monthSelect.value);
-    const selectedViewMode = viewSelect.value;
-    saveShifts(); // Save shifts before changing view
-    createCalendar(selectedMonthIndex, selectedViewMode);
-});
 
 toggleViewBtn.addEventListener('click', toggleViewWithData);
+clearDataBtn.addEventListener('click', clearAllData);
 calculateBtn.addEventListener('click', calculateHours);
 exportBtn.addEventListener('click', exportAsPDF);
 
