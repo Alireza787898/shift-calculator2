@@ -48,17 +48,16 @@ h2 {
     margin-bottom: 20px;
 }
 
-/* اصلاح تراز متن در منوهای کشویی */
 #month-select, #view-select {
     font-family: 'BNazanin', Arial, sans-serif;
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
     direction: rtl;
-    text-align: right; /* این خط متن را به سمت راست منتقل می‌کند */
+    text-align: right;
 }
 
-#calculate-btn, #toggle-view-btn {
+#calculate-btn, #toggle-view-btn, #clear-data-btn {
     font-family: 'BNazanin', Arial, sans-serif;
     width: 100%;
     padding: 10px;
@@ -142,12 +141,16 @@ h2 {
     color: red;
 }
 
-#calculate-btn, #toggle-view-btn {
+#calculate-btn, #toggle-view-btn, #clear-data-btn {
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+}
+
+#export-btn {
+    background-color: #28a745;
 }
 
 #result {
