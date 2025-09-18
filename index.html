@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاسبه‌گر شیفت</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="capture-area" class="container">
+        <h1>محاسبه‌گر ساعات شیفت‌ها</h1>
+        <h2>طراح: علیرضا اکبری</h2>
+        
+        <label for="month-select">ماه مورد نظر خود را انتخاب کنید - سال ۱۴۰۴:</label>
+        <select id="month-select"></select>
+
+        <label for="view-select">حالت نمایش:</label>
+        <select id="view-select">
+            <option value="calendar">حالت تقویمی</option>
+            <option value="linear">حالت خطی</option>
+        </select>
+        
+        <button id="toggle-view-btn">تغییر حالت نمایش با حفظ اطلاعات</button>
+        
+        <div class="scroll-container">
+            <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+
+        <button id="calculate-btn">محاسبه ساعات</button>
+        <div id="result"></div>
+    </div>
+
+    <button id="export-btn">خروجی PDF</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
